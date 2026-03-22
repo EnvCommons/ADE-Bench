@@ -1,0 +1,28 @@
+# Data (downloaded by prepare_data.py)
+data/
+ade-bench-clone/
+
+# Python
+__pycache__/
+*.pyc
+.Python
+venv/
+.venv/
+
+# Environment files
+.env
+.env.*
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# dbt
+target/
+dbt_packages/
+logs/
