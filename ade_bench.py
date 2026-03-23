@@ -251,7 +251,8 @@ class ADEBench(Environment):
             f"cd /app && {params.command.strip()}",
             timeout=300,
         )
-        output, code = result
+        output = result.output
+        code = result.return_code
 
         if result.truncated:
             output = f"...(truncated, output exceeded limit)\n{output}"
@@ -293,7 +294,7 @@ class ADEBench(Environment):
                 "bash /tmp/test-setup.sh 2>&1",
                 timeout=300,
             )
-            eval_output += setup_result[0] + "\n"
+            eval_output += setup_result.output + "\n"
 
         # Step 3: Generate AUTO test SQL files from solution_seeds (server-side)
         if self.solution_seeds:
@@ -337,7 +338,7 @@ class ADEBench(Environment):
             done; echo "[ade-bench] expected_test_count=$included"
             """
         )
-        eval_output += count_result[0] + "\n"
+        eval_output += count_result.output + "\n"
 
         # Step 6: Copy seed CSVs from bucket and handle schema merging
         if self.has_seeds:
@@ -352,14 +353,14 @@ class ADEBench(Environment):
                 "cd /app && dbt seed 2>&1",
                 timeout=120,
             )
-            eval_output += seed_result[0] + "\n"
+            eval_output += seed_result.output + "\n"
 
         # Step 7: Run dbt test
         test_result = await self.sandbox.run(
             'cd /app && dbt test --select "test_type:singular" 2>&1',
             timeout=300,
         )
-        eval_output += test_result[0] + "\n"
+        eval_output += test_result.output + "\n"
 
         # Step 8: Parse results
         resolved, summary = _parse_dbt_output(eval_output)
