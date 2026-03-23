@@ -22,7 +22,9 @@ from test_generator import generate_solution_tests, get_equality_macro_content
 # Module-level data loading
 # ---------------------------------------------------------------------------
 
-if os.path.exists("/orwd_data"):
+if os.path.exists("/orwd_data/data"):
+    _data_path = "/orwd_data/data/tasks.json"
+elif os.path.exists("/orwd_data"):
     _data_path = "/orwd_data/tasks.json"
 else:
     _data_path = os.path.join(os.path.dirname(__file__), "data", "tasks.json")
