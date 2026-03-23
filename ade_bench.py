@@ -39,7 +39,7 @@ _TASKS_BY_ID: dict[str, JSONObject] = {t["id"]: t for t in _ALL_TASKS}
 # Tool input models
 # ---------------------------------------------------------------------------
 
-BUCKET_PREFIX = "data"
+BUCKET_DIR = "data"
 
 
 class BashParams(BaseModel, extra="forbid"):
@@ -164,7 +164,7 @@ class ADEBench(Environment):
             bucket_config=SandboxBucketConfig(
                 mount_path="/tmp/gr-datasets",
                 read_only=True,
-                only_dir=BUCKET_PREFIX,
+                only_dir=BUCKET_DIR,
             ),
         )
 
@@ -190,7 +190,7 @@ class ADEBench(Environment):
     async def setup(self) -> None:
         await self.sandbox.start()
 
-        bucket = f"/tmp/gr-datasets/{BUCKET_PREFIX}"
+        bucket = "/tmp/gr-datasets"
 
         # Copy dbt project to /app/
         project_src = f"{bucket}/domains/{self.project_name}/project"
@@ -232,7 +232,8 @@ class ADEBench(Environment):
             "## Instructions\n\n"
             "The dbt project is at `/app/`. The DuckDB database is in the same directory.\n"
             "Use `dbt run`, `dbt compile`, `dbt test`, and other dbt commands to explore and fix the project.\n"
-            "You can also query the database directly with `duckdb /app/*.duckdb` for data inspection.\n\n"
+            f"You can query the DuckDB database directly with Python: "
+            f"`python3 -c \"import duckdb; db=duckdb.connect('/app/{self.db_name}.duckdb'); print(db.sql('SHOW TABLES').fetchall())\"`\n\n"
             "When you are done, call the `submit` tool to evaluate your solution.\n\n"
             "Key principles:\n"
             "- Do exactly what is asked, nothing more\n"
@@ -276,7 +277,7 @@ class ADEBench(Environment):
             )
 
         self.submitted = True
-        bucket = f"/tmp/gr-datasets/{BUCKET_PREFIX}"
+        bucket = "/tmp/gr-datasets"
 
         # Step 1: Clean test and seed directories in the project
         await self.sandbox.run("cd /app && rm -rf tests seeds && mkdir -p tests seeds")
