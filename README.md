@@ -58,7 +58,8 @@ Each domain has a dbt project and DuckDB database. Per-task data includes setup 
 ## Tools
 
 - `bash` — Execute bash commands in the dbt project directory (`/app/`)
-- `submit` — Submit solution for evaluation (runs dbt tests, returns binary reward)
+
+Grading uses a hidden `@terminal` tool: when the agent is done modifying the dbt project, it replies with a plain message (no tool call). The environment rebuilds test/seed directories, applies the AUTO + manual dbt test files, and runs `dbt test`. Reward is 1.0 iff all tests pass. The assistant message text itself is not graded.
 
 ## Time Horizon
 

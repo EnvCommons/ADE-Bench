@@ -13,7 +13,7 @@ import os
 import re
 
 from openreward import AsyncOpenReward, SandboxBucketConfig, SandboxSettings
-from openreward.environments import Environment, JSONObject, Server, TextBlock, ToolOutput, tool
+from openreward.environments import Environment, JSONObject, Server, TextBlock, ToolOutput, terminal, tool
 from pydantic import BaseModel
 
 from test_generator import generate_solution_tests, get_equality_macro_content
@@ -171,8 +171,6 @@ class ADEBench(Environment):
         or_client = AsyncOpenReward(api_key=secrets.get("api_key"))
         self.sandbox = or_client.sandbox(self.sandbox_settings)
 
-        self.submitted = False
-
     # ---- class methods ----
 
     @classmethod
@@ -234,11 +232,12 @@ class ADEBench(Environment):
             "Use `dbt run`, `dbt compile`, `dbt test`, and other dbt commands to explore and fix the project.\n"
             f"You can query the DuckDB database directly with Python: "
             f"`python3 -c \"import duckdb; db=duckdb.connect('/app/{self.db_name}.duckdb'); print(db.sql('SHOW TABLES').fetchall())\"`\n\n"
-            "When you are done, call the `submit` tool to evaluate your solution.\n\n"
+            "When you are done, reply with an ordinary message (no tool call). The environment "
+            "will then run the dbt test suite against your changes and score the result.\n\n"
             "Key principles:\n"
             "- Do exactly what is asked, nothing more\n"
             "- Inspect actual data to understand problems\n"
-            "- Check your work by running dbt commands before submitting\n"
+            "- Check your work by running dbt commands before finishing\n"
             "- Do not add tests, documentation, or refactor unless explicitly asked"
         )
         return [TextBlock(text=prompt)]
@@ -265,18 +264,14 @@ class ADEBench(Environment):
             finished=False,
         )
 
+    @terminal
     @tool
     async def submit(self, params: SubmitParams) -> ToolOutput:
-        """Submit your solution for evaluation. Runs dbt tests to verify correctness."""
-        if self.submitted:
-            return ToolOutput(
-                blocks=[TextBlock(text="Already submitted.")],
-                metadata={"error": "already_submitted"},
-                reward=0.0,
-                finished=True,
-            )
+        """Grade the sandbox state (assistant message is discarded).
 
-        self.submitted = True
+        Rebuilds test/seed dirs, runs the AUTO + manual dbt tests against the
+        agent's changes, and reports pass/fail. Reward is 1.0 iff all tests pass.
+        """
         bucket = "/tmp/gr-datasets"
 
         # Step 1: Clean test and seed directories in the project
